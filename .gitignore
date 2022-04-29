@@ -1,2 +1,6 @@
 keym
 *.o
+
+.cache/clangd/index
+.clang-format
+compile_commands.json
