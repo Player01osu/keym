@@ -5,12 +5,10 @@
 #include <sys/select.h>
 
 static const int speeds[5] = { 80, 400, 1400, 4000, 10000 };
-static const int scroll[5] = { 1000, 5000, 30000, 50000, 100000 };
-static const char *unmap[] = { "h",	  "j",	       "k",   "l",	   "q",	    "e",
-			       "r",	  "f",	       "g",   "a",	   "v",	    "n",
-			       "s",	  "semicolon", "i",   "c",	   "u",	    "o",
-			       "Shift_L", "backslash", "Tab", "Left",	   "Right", "Up",
-			       "Down",	  "x",	       "m",   "Control_R", "d" };
+static const int scroll[5] = { 70000, 5000, 3000, 50000, 100000 };
+static const char *unmap[] = { "h",	"j",  "k",    "l",	   "b", "e",	     "f", "g",
+			       "a",	"n",  "s",    "semicolon", "i", "u",	     "o", "Left",
+			       "Right", "Up", "Down", "x",	   "m", "Control_R", "d" };
 
 static Display *display;
 static char keymap[32] = { 0 };
@@ -78,8 +76,8 @@ int main()
 		FD_SET(x11_fd, &in_fds);
 
 		tv.tv_sec = 0;
-		tv.tv_usec = (key_delta[4] || key_delta[5]) ? scroll[speed] :
-			     idle			    ? 50000 :
+		tv.tv_usec = (key_delta[4] || key_delta[5]) ? scroll[0] :
+			     idle			    ? 100 :
 								    speeds[speed];
 		num_ready_fds = select(x11_fd + 1, &in_fds, NULL, NULL, &tv);
 
@@ -98,18 +96,15 @@ int main()
 		/* speed adjustment from slow to fast */
 		speed = 2;
 		speed = (pressed(XK_f)) ? 4 : speed;
-		speed = (pressed(XK_g) || pressed(XK_backslash) || pressed(XK_Tab)) ? 3 : speed;
-		speed = (pressed(XK_a) || pressed(XK_Shift_L)) ? 1 : speed;
+		speed = (pressed(XK_g)) ? 3 : speed;
+		speed = (pressed(XK_a)) ? 1 : speed;
 		speed = (pressed(XK_s)) ? 0 : speed;
 
 		/* mouse clicks */
-		XTestFakeButtonEvent(display, Button1,
-				     (pressed(XK_m) || pressed(XK_q)) ? True : False, CurrentTime);
-		XTestFakeButtonEvent(display, Button3,
-				     (pressed(XK_n) || pressed(XK_e)) ? True : False, CurrentTime);
-		XTestFakeButtonEvent(display, Button2,
-				     (pressed(XK_b) || pressed(XK_c)) ? True : False, CurrentTime);
-		XTestFakeButtonEvent(display, 8, pressed(XK_u) ? True : False, CurrentTime);
+		XTestFakeButtonEvent(display, Button1, (pressed(XK_m)) ? True : False, CurrentTime);
+		XTestFakeButtonEvent(display, Button3, (pressed(XK_n)) ? True : False, CurrentTime);
+		XTestFakeButtonEvent(display, Button2, (pressed(XK_b)) ? True : False, CurrentTime);
+		XTestFakeButtonEvent(display, 8, pressed(XK_e) ? True : False, CurrentTime);
 		XTestFakeButtonEvent(display, 9, pressed(XK_o) ? True : False, CurrentTime);
 
 		/* exit */
