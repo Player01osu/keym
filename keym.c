@@ -6,9 +6,8 @@
 
 static const int speeds[5] = { 80, 400, 1400, 4000, 10000 };
 static const int scroll[5] = { 70000, 5000, 3000, 50000, 100000 };
-static const char *unmap[] = { "h",	"j",  "k",    "l",	   "b", "e",	     "f", "g",
-			       "a",	"n",  "s",    "semicolon", "i", "u",	     "o", "Left",
-			       "Right", "Up", "Down", "x",	   "m", "Control_R", "d" };
+static const char *unmap[] = { "h", "j",	 "k", "l", "b", "e", "f", "g",	       "a", "n",
+			       "s", "semicolon", "i", "u", "o", "x", "m", "Control_R", "d" };
 
 static Display *display;
 static char keymap[32] = { 0 };
@@ -76,7 +75,7 @@ int main()
 		FD_SET(x11_fd, &in_fds);
 
 		tv.tv_sec = 0;
-		tv.tv_usec = (key_delta[4] || key_delta[5]) ? scroll[0] :
+		tv.tv_usec = (key_delta[4] || key_delta[5]) ? scroll[speed] :
 			     idle			    ? 100 :
 								    speeds[speed];
 		num_ready_fds = select(x11_fd + 1, &in_fds, NULL, NULL, &tv);
@@ -84,10 +83,10 @@ int main()
 		XQueryKeymap(display, keymap);
 
 		/* mouse movement */
-		key_delta[0] = pressed(XK_Left) || pressed(XK_h);
-		key_delta[1] = pressed(XK_Right) || pressed(XK_l);
-		key_delta[2] = pressed(XK_Up) || pressed(XK_k);
-		key_delta[3] = pressed(XK_Down) || pressed(XK_j);
+		key_delta[0] = pressed(XK_h);
+		key_delta[1] = pressed(XK_l);
+		key_delta[2] = pressed(XK_k);
+		key_delta[3] = pressed(XK_j);
 
 		/* scrolling */
 		key_delta[4] = pressed(XK_u);
