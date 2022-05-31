@@ -5,9 +5,9 @@
 #include <sys/select.h>
 
 static const int speeds[5] = { 80, 400, 1400, 4000, 10000 };
-static const int scroll[5] = { 70000, 5000, 3000, 50000, 100000 };
-static const char *unmap[] = { "h", "j",	 "k", "l", "b", "e", "f", "g",	       "a", "n",
-			       "s", "semicolon", "i", "u", "o", "x", "m", "Control_R", "d" };
+static const int scroll[5] = { 10000, 70000, 107000, 150000, 200000 };
+static const char *unmap[] = { "h", "j", "k", "l",	   "b", "e", "f", "g", "a",	   "d",
+			       "u", "n", "s", "semicolon", "i", "o", "x", "m", "Control_R" };
 
 static Display *display;
 static char keymap[32] = { 0 };
