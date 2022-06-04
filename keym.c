@@ -1,4 +1,5 @@
 #include <X11/extensions/XTest.h>
+#include <stdbool.h>
 #include <X11/keysym.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,13 +23,15 @@ char pressed(int keycode)
 
 int main()
 {
-	KeySym *keysyms, *original;
+	KeySym *keysyms, *original, *arrowsyms;
+	bool mouseMode = true;
+	bool vkeys = false;
 	fd_set in_fds;
 	struct timeval tv;
 	int x11_fd;
 	int num_ready_fds;
 	char idle = 1;
-	char key_delta[6] = { 0 }; /* left, right, up, down, scroll up, scroll down */
+	char key_delta[7] = { 0 }; /* left, right, up, down, scroll up, scroll down */
 	char speed = 2; /* dash, fast, normal, slow, crawl */
 	char quit = 0;
 	int first_keycode, max_keycode, ks_per_keystroke;
@@ -50,6 +53,7 @@ int main()
 
 	original = XGetKeyboardMapping(display, first_keycode, num_keycodes, &ks_per_keystroke);
 	keysyms = XGetKeyboardMapping(display, first_keycode, num_keycodes, &ks_per_keystroke);
+	arrowsyms = XGetKeyboardMapping(display, first_keycode, num_keycodes, &ks_per_keystroke);
 
 	/* unmap a selection of keys */
 	for (i = 0; i < num_keycodes; ++i) {
@@ -67,10 +71,30 @@ int main()
 					keysyms[i * ks_per_keystroke] = NoSymbol;
 		}
 	}
-
 	/* do the unmapping */
 	XChangeKeyboardMapping(display, first_keycode, ks_per_keystroke, keysyms,
 			       max_keycode - first_keycode);
+
+	/* map arrowsyms to vim keys */
+	for (i = 0; i < num_keycodes; ++i) {
+		if (arrowsyms[i * ks_per_keystroke] != NoSymbol) {
+			KeySym ks = arrowsyms[i * ks_per_keystroke];
+			const char *keysym_str = XKeysymToString(ks);
+
+			//uncomment if you want a list of strings for unmapping
+			printf("%s\n", keysym_str);
+			fflush(stdout);
+
+			if (strcmp(keysym_str, "h") == 0)
+				arrowsyms[i * ks_per_keystroke] = XK_Left;
+			if (strcmp(keysym_str, "j") == 0)
+				arrowsyms[i * ks_per_keystroke] = XK_Down;
+			if (strcmp(keysym_str, "k") == 0)
+				arrowsyms[i * ks_per_keystroke] = XK_Up;
+			if (strcmp(keysym_str, "l") == 0)
+				arrowsyms[i * ks_per_keystroke] = XK_Right;
+		}
+	}
 
 	while (1) {
 		FD_ZERO(&in_fds);
@@ -94,6 +118,8 @@ int main()
 		key_delta[4] = pressed(XK_u);
 		key_delta[5] = pressed(XK_d);
 
+		key_delta[6] = pressed(XK_space);
+
 		/* speed adjustment from slow to fast */
 		speed = 2;
 		speed = (pressed(XK_f)) ? 4 : speed;
@@ -102,18 +128,14 @@ int main()
 		speed = (pressed(XK_s)) ? 0 : speed;
 
 		/* mouse clicks */
-		XTestFakeButtonEvent(display, Button1, (pressed(XK_m)) ? True : False, CurrentTime);
-		XTestFakeButtonEvent(display, Button3, (pressed(XK_n)) ? True : False, CurrentTime);
-		XTestFakeButtonEvent(display, Button2, (pressed(XK_b)) ? True : False, CurrentTime);
-		XTestFakeButtonEvent(display, 8, pressed(XK_e) ? True : False, CurrentTime);
-		XTestFakeButtonEvent(display, 9, pressed(XK_o) ? True : False, CurrentTime);
+		XTestFakeButtonEvent(display, Button1, pressed(XK_m), CurrentTime);
+		XTestFakeButtonEvent(display, Button3, pressed(XK_n), CurrentTime);
+		XTestFakeButtonEvent(display, Button2, pressed(XK_b), CurrentTime);
+		XTestFakeButtonEvent(display, 8, pressed(XK_e), CurrentTime);
+		XTestFakeButtonEvent(display, 9, pressed(XK_o), CurrentTime);
 
 		/* exit */
-		//quit = (!pressed(XK_x));
-		if (!pressed(XK_x))
-			quit = 1;
-
-		if (quit == 1 && (pressed(XK_x))) {
+		if (pressed(XK_x)) {
 			/* restore the original mapping */
 			XChangeKeyboardMapping(display, first_keycode, ks_per_keystroke, original,
 					       max_keycode - first_keycode);
@@ -128,12 +150,27 @@ int main()
 				      GrabModeAsync, CurrentTime);
 
 		idle = 1;
-		if (key_delta[0] || key_delta[1] || key_delta[2] || key_delta[3]) {
+
+		mouseMode = (key_delta[0] || key_delta[1] || key_delta[2] || key_delta[3]) &&
+			    !key_delta[6];
+
+		if (mouseMode) {
 			XWarpPointer(display, None, None, 0, 0, 0, 0, (key_delta[1] - key_delta[0]),
 				     (key_delta[3] - key_delta[2]));
 			XSync(display, False);
 			idle = 0;
+		} else if (key_delta[6]) {
+			if (!vkeys) {
+				XChangeKeyboardMapping(display, first_keycode, ks_per_keystroke,
+						       arrowsyms, max_keycode - first_keycode);
+				vkeys = true;
+			}
+		} else if (!key_delta[6] && vkeys) {
+			vkeys = false;
+			XChangeKeyboardMapping(display, first_keycode, ks_per_keystroke, keysyms,
+					       max_keycode - first_keycode);
 		}
+
 		if (key_delta[4]) {
 			XTestFakeButtonEvent(display, Button4, True, 1);
 			XTestFakeButtonEvent(display, Button4, False, 1);
