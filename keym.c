@@ -85,6 +85,8 @@ int main()
 			printf("%s\n", keysym_str);
 			fflush(stdout);
 
+			if (strcmp(keysym_str, "space") == 0)
+				arrowsyms[i * ks_per_keystroke] = NoSymbol;
 			if (strcmp(keysym_str, "h") == 0)
 				arrowsyms[i * ks_per_keystroke] = XK_Left;
 			if (strcmp(keysym_str, "j") == 0)
@@ -102,8 +104,7 @@ int main()
 
 		tv.tv_sec = 0;
 		tv.tv_usec = (key_delta[4] || key_delta[5]) ? scroll[speed] :
-			     idle			    ? 100 :
-								    speeds[speed];
+			     idle ? 100 : speeds[speed];
 		num_ready_fds = select(x11_fd + 1, &in_fds, NULL, NULL, &tv);
 
 		XQueryKeymap(display, keymap);
@@ -143,6 +144,14 @@ int main()
 			return 0;
 		}
 
+		if (key_delta[4]) {
+			XTestFakeButtonEvent(display, Button4, True, 1);
+			XTestFakeButtonEvent(display, Button4, False, 1);
+		} else if (key_delta[5]) {
+			XTestFakeButtonEvent(display, Button5, True, 1);
+			XTestFakeButtonEvent(display, Button5, False, 1);
+		}
+
 		/* option to grab whole keyboard focus - this is useful for some
 		 * applications that try to do their own input handling */
 		if (pressed(XK_Control_R))
@@ -169,14 +178,6 @@ int main()
 			vkeys = false;
 			XChangeKeyboardMapping(display, first_keycode, ks_per_keystroke, keysyms,
 					       max_keycode - first_keycode);
-		}
-
-		if (key_delta[4]) {
-			XTestFakeButtonEvent(display, Button4, True, 1);
-			XTestFakeButtonEvent(display, Button4, False, 1);
-		} else if (key_delta[5]) {
-			XTestFakeButtonEvent(display, Button5, True, 1);
-			XTestFakeButtonEvent(display, Button5, False, 1);
 		}
 	}
 
