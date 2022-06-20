@@ -7,10 +7,9 @@
 
 static const int speeds[5] = { 80, 400, 1400, 4000, 10000 };
 static const int scroll[5] = { 10000, 70000, 107000, 150000, 200000 };
-static const char *unmap[] = {
-	"h", "j", "k", "l",	    "b", "e", "f", "g", "a",	     "d",
-	"u", "n", "s", "semicolon", "i", "o", "x", "m", "Control_R", "space"
-};
+static const char *unmap[] = { "h",	    "j",     "k", "l", "b",	    "e", "f", "g", "a",
+			       "d",	    "u",     "n", "s", "semicolon", "i", "o", "x", "m",
+			       "Control_R", "space", "M", "N", "H",	    "J", "K", "L" };
 
 static Display *display;
 static char keymap[32] = { 0 };
@@ -61,14 +60,16 @@ int main()
 			KeySym ks = keysyms[i * ks_per_keystroke];
 			const char *keysym_str = XKeysymToString(ks);
 
-			/* uncomment if you want a list of strings for unmapping
-			 * printf("%s\n", keysym_str);
-			 * fflush(stdout);
+			/* uncomment if you want a list of strings for unmapping */
+			/*printf("%s\n", keysym_str);
+			 *fflush(stdout);
 			 */
 
 			for (j = 0; j < len; ++j)
 				if (strcmp(keysym_str, unmap[j]) == 0)
 					keysyms[i * ks_per_keystroke] = NoSymbol;
+			if (strcmp(keysym_str, "space") == 0)
+				arrowsyms[i * ks_per_keystroke] = NoSymbol;
 		}
 	}
 	/* do the unmapping */
@@ -104,7 +105,8 @@ int main()
 
 		tv.tv_sec = 0;
 		tv.tv_usec = (key_delta[4] || key_delta[5]) ? scroll[speed] :
-			     idle ? 100 : speeds[speed];
+			     idle			    ? 100 :
+								    speeds[speed];
 		num_ready_fds = select(x11_fd + 1, &in_fds, NULL, NULL, &tv);
 
 		XQueryKeymap(display, keymap);
